@@ -1,0 +1,100 @@
+import RPi.GPIO as GPIO
+import time
+import sys
+import ibmiotf.application
+import ibmiotf.device
+from os.path import join,dirname
+from os import environ
+from pprint import pprint
+#Provide your IBM Watson Device Credentials
+organization = "vkhv0d"
+deviceType = "SMARTDOOR"
+deviceId = "SMARTDOOR1"
+authMethod = "use-token-auth"
+authToken = "sIX7BszX-igvt_sqGN"
+# Initialize GPIO
+GPIO.setwarnings(False)
+GPIO.cleanup()
+GPIO.setmode(GPIO.BCM)  # set board mode to Broadcom
+GPIO.setup(18, GPIO.OUT)   # set up pin 18
+GPIO.setup(24,GPIO.IN)
+GPIO.setup(12,GPIO.OUT)    # output for bell
+GPIO.setup(23,GPIO.IN)  #input for bell
+GPIO.setmode(GPIO.BOARD)  #SERVO MOTOR	
+GPIO.setup(33, GPIO.OUT)  #SERVO MOTOR PULSE PIN
+
+p = GPIO.PWM(33, 50)
+
+p.start(7.5)
+
+
+# Initialize the device client.
+try:
+	deviceOptions = {"org": organization, "type": deviceType, "id": deviceId, "auth-method": authMethod, "auth-token": authToken}
+	deviceCli = ibmiotf.device.Client(deviceOptions)
+except Exception as e:
+	print("Caught exception connecting device: %s" % str(e))
+	sys.exit()
+
+def mycommandCallback(cmd):
+                print ("command received: %s "  % cmd.data['command'])
+                s=str(cmd.data['command'])
+                print s
+                if(s=="LIGHT ON"):
+                        GPIO.output(24,True)
+		p.ChangeDutyCycle(7.5)  # turn towards 90 degree
+		time.sleep(1) # sleep 1 second
+		p.ChangeDutyCycle(2.5)  # turn towards 0 degree
+		time.sleep(1) # sleep 1 second
+		p.ChangeDutyCycle(12.5) # turn towards 180 degree
+                time.sleep(1) # sleep 1 second 
+                elif(s=="LIGHTOFF"):
+                        GPIO.output(24,False)
+	except KeyboardInterrupt:
+	p.stop()
+       	 GPIO.cleanup()
+                elif(s=="LIGHT ON"):
+                        GPIO.output(12,True)
+		p.ChangeDutyCycle(7.5)  # turn towards 90 degree
+		time.sleep(1) # sleep 1 second
+		p.ChangeDutyCycle(2.5)  # turn towards 0 degree
+		time.sleep(1) # sleep 1 second
+		p.ChangeDutyCycle(12.5) # turn towards 180 degree
+                time.sleep(1) # sleep 1 second 
+                elif(s=="LIGHT OFF"):
+                        GPIO.output(12,False)
+ 	except KeyboardInterrupt:
+	p.stop()
+       	 GPIO.cleanup()
+		
+              
+       
+
+
+# Connect and send 
+deviceCli.connect()
+while True:
+        
+             	      SW1 = GPIO.input(24)
+                        SW2 = GPIO.input(23)
+
+                        data = { 'SWITCH1' : SW1, 'SWITCH2': SW2}
+                        #print data
+                        def myOnPublishCallback():
+                            print "Published SWITCH1 = %s C" % SW1, "SWITCH2 = %s %%" % SW2, "to IBM Watson"
+                        success = deviceCli.publishEvent("Basic shield", "json", data, qos=0, on_publish=myOnPublishCallback)
+                        if not success:
+                                print("Not connected to IoTF")
+                        time.sleep(2)
+
+        else:
+            print "Data not received"
+        
+        deviceCli.commandCallback=mycommandCallback
+        
+
+                
+           
+        
+# Disconnect the device and application from the cloud
+deviceCli.disconnect()

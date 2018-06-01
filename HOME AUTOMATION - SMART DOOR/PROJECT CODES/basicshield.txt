@@ -1,0 +1,33 @@
+import RPi.GPIO as GPIO
+import time
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)  # set board mode to Broadcom
+GPIO.setup(18, GPIO.OUT)  # set up pin 18
+GPIO.setup(24,GPIO.IN)
+GPIO.setup(12,GPIO.OUT) # output for bell
+GPIO.setup(23,GPIO.IN) #input for bell
+ 
+while True:
+   
+    state =GPIO.input(24)
+    if state == 0:
+        GPIO.output(18, state)  # turn on pin 18
+        print 'led on'
+        time.sleep(1)
+    else:
+        print "led off"
+        GPIO.output(18,state) #turn off
+        time.sleep(1)
+
+	 state =GPIO.input(23)
+    if state == 0:
+        GPIO.output(12, state)  # turn on pin 12
+        print 'led on'
+        time.sleep(1)
+    else:
+        print "led off"
+        GPIO.output(12,state) #turn off
+        time.sleep(1)
+
+
+    
